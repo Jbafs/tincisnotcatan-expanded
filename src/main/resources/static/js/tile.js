@@ -15,7 +15,8 @@ var TILE_TYPE = {
 	WHEAT: 4,
 	SHEEP: 5,
 	DESERT: 6,
-	SEA: 7
+	SEA: 7,
+	GOLD_FIELD: 8
 }
 
 var PORT = {
@@ -104,6 +105,9 @@ Tile.prototype.draw = function(transX, transY, scale) {
 			break;
 		case TILE_TYPE.DESERT:
 			element.addClass("desert-color");
+			break;
+		case TILE_TYPE.GOLD_FIELD:
+			element.addClass("gold-field-color");
 			break;
 		case TILE_TYPE.SEA:
 			element.css("background", "none");
@@ -344,6 +348,8 @@ function parseTileType(tileType) {
 			return TILE_TYPE.DESERT;
 		case "SEA":
 			return TILE_TYPE.SEA;
+		case "GOLD_FIELD":
+			return TILE_TYPE.GOLD_FIELD;
 		default:
 			return;
 	}

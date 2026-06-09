@@ -20,6 +20,7 @@ import edu.brown.cs.board.IntersectionCoordinate;
 import edu.brown.cs.board.Path;
 import edu.brown.cs.board.Port;
 import edu.brown.cs.board.Road;
+import edu.brown.cs.board.Ship;
 import edu.brown.cs.board.Tile;
 import edu.brown.cs.board.TileType;
 import edu.brown.cs.catan.DevelopmentCard;
@@ -71,6 +72,8 @@ public class CatanConverter {
     private Collection<PublicPlayerRaw> players;
     private GameSettings settings;
     private GameStatsRaw stats;
+    private boolean isSpecialBuildPhase;
+    private List<Integer> specialBuildQueue;
 
     public GameState(Referee ref, int playerID) {
       this.playerID = playerID;
@@ -87,6 +90,8 @@ public class CatanConverter {
       this.players = new ArrayList<>();
       this.settings = ref.getGameSettings();
       this.stats = new GameStatsRaw(ref);
+      this.isSpecialBuildPhase = ref.getGameStatus() == GameStatus.SPECIAL_BUILD;
+      this.specialBuildQueue = ref.getSpecialBuildQueue();
       for (Player p : ref.getPlayers()) {
         players.add(new PublicPlayerRaw(p, ref.getReadOnlyReferee()));
       }
@@ -156,15 +161,20 @@ public class CatanConverter {
     private IntersectionCoordinate start;
     private IntersectionCoordinate end;
     private RoadRaw road;
+    private ShipRaw ship;
     private boolean canBuildRoad;
+    private boolean canBuildShip;
 
     public PathRaw(Referee ref, Path path, int playerID) {
       start = path.getStart().getPosition();
       end = path.getEnd().getPosition();
       road = path.getRoad() != null ? new RoadRaw(path.getRoad()) : null;
+      ship = path.getShip() != null ? new ShipRaw(path.getShip()) : null;
       canBuildRoad = ref.getGameStatus() == GameStatus.SETUP ? path
           .canPlaceSetupRoad(ref.getSetup()) : path.canPlaceRoad(ref
           .getPlayerByID(playerID));
+      canBuildShip = ref.getGameStatus() != GameStatus.SETUP
+          && path.canPlaceShip(ref.getPlayerByID(playerID));
     }
 
   }
@@ -174,6 +184,14 @@ public class CatanConverter {
 
     public RoadRaw(Road road) {
       player = road.getPlayer().getID();
+    }
+  }
+
+  private static class ShipRaw {
+    private int player;
+
+    public ShipRaw(Ship shipPiece) {
+      player = shipPiece.getPlayer().getID();
     }
   }
 
@@ -247,12 +265,14 @@ public class CatanConverter {
     private int numCities;
     private int numPlayedKnights;
     private int numRoads;
+    private int numShips;
     private boolean longestRoad;
     private boolean largestArmy;
     private int victoryPoints;
     private double numResourceCards;
     private int numDevelopmentCards;
     private Map<Resource, Double> rates;
+    private boolean wantsToSpecialBuild;
 
     public PublicPlayerRaw(Player p, Referee r) {
       name = p.getName();
@@ -262,12 +282,14 @@ public class CatanConverter {
       numCities = p.numCities();
       numPlayedKnights = p.numPlayedKnights();
       numRoads = p.numRoads();
+      numShips = p.numShips();
       longestRoad = r.hasLongestRoad(p.getID());
       largestArmy = r.hasLargestArmy(p.getID());
       victoryPoints = r.getNumPublicPoints(p.getID());
       rates = r.getBankRates(p.getID());
       numResourceCards = p.getNumResourceCards();
       numDevelopmentCards = p.getNumDevelopmentCards();
+      wantsToSpecialBuild = p.wantsToSpecialBuild();
     }
 
   }

@@ -34,6 +34,8 @@
 										<option value="4">4 players</option>
 										<option value="3">3 players</option>
 										<option value="2">2 players</option>
+										<option value="5">5 players</option>
+										<option value="6">6 players</option>
 									</select>
 								</div>
 							</div>
@@ -75,6 +77,14 @@
 	  							<label class="btn btn-default" id="dynamic-rates-option">
 	    							<input type="radio" autocomplete="off">Dynamic
 	  							</label>
+							</div>
+						</div>
+						<div id="special-build-container" class="hidden">
+							<br>
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" id="special-build-phase-checkbox"> Special Building Phase
+								</label>
 							</div>
 						</div>
 						<br>

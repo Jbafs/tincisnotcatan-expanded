@@ -71,10 +71,17 @@ public class BuildSettlement implements Action {
     _player.useSettlement();
     _intersection.placeSettlement(_player);
 
+    boolean islandDiscovered = _ref.getGameStatus() == GameStatus.PROGRESS
+        && _ref.notifyIslandDiscovery(_player, _intersection);
+
     // Formulate responses and send:
-    ActionResponse respToBuyer = new ActionResponse(true,
-        "Congratulations! You built a Settlement.", null);
-    String message = String.format("%s built a settlement.", _player.getName());
+    String buyerMsg = islandDiscovered
+        ? "Congratulations! You built a Settlement and discovered a new island!"
+        : "Congratulations! You built a Settlement.";
+    ActionResponse respToBuyer = new ActionResponse(true, buyerMsg, null);
+    String message = islandDiscovered
+        ? String.format("%s built a settlement and discovered a new island!", _player.getName())
+        : String.format("%s built a settlement.", _player.getName());
     ActionResponse respToRest = new ActionResponse(true, message, null);
     Map<Integer, ActionResponse> toReturn = new HashMap<>();
     for (Player player : _ref.getPlayers()) {

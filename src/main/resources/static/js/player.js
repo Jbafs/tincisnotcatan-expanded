@@ -66,11 +66,14 @@ Player.prototype.addPlayerTab = function() {
 			+ "<p><strong>Resource Cards:</strong> " + formatNumber(this.resourceCards) + "</p>"
 			+ "<p><strong>Development Cards:</strong> " + this.developmentCards + "</p>"
 			+ "<p><strong>Played Knights:</strong> " + this.playedKnights + "</p></div></div>");
+	var shipLine = (gameSettings && gameSettings.isSeafarers)
+		? "<p><strong>Ships:</strong> " + (this.ships || 0) + "</p>" : "";
 	tab.append("<div class='panel panel-default player-tab-panel'><div class='panel-heading'>"
-			+ "<h5 class='panel-title-small'>Remaining Buildings</h5></div><div class='panel-body'"
+			+ "<h5 class='panel-title-small'>Remaining Buildings</h5></div><div class='panel-body'>"
 			+ "<p><strong>Roads:</strong> " + this.roads + "</p>"
 			+ "<p><strong>Settlements:</strong> " + this.settlements + "</p>"
-			+ "<p><strong>Cities:</strong> " + this.cities + "</p></div></div>");
+			+ "<p><strong>Cities:</strong> " + this.cities + "</p>"
+			+ shipLine + "</div></div>");
 
 	// Add longest road banner if applicable
 	if (this.longestRoad) {
@@ -82,6 +85,11 @@ Player.prototype.addPlayerTab = function() {
 	if (this.largestArmy) {
 		tab.append("<div class='largest-army-banner text-center'><h4>Largest Army"
 				+ "<img src='images/icon-knight.svg' alt='Knight'></h4></div>");
+	}
+
+	// Show build intent indicator for special building phase
+	if (this.wantsToSpecialBuild) {
+		tab.append("<div class='text-center' style='margin-top:4px'><span class='label label-warning'>Build Intent Flagged</span></div>");
 	}
 
 	// Modify color scheme to fit this player's color
@@ -140,12 +148,14 @@ function parsePlayers(playersData) {
 		player.victoryPoints = playerData.victoryPoints;
 		player.playedKnights = playerData.numPlayedKnights;
 		player.roads = playerData.numRoads;
+		player.ships = playerData.numShips || 0;
 		player.settlements = playerData.numSettlements;
 		player.cities = playerData.numCities;
 		player.largestArmy = playerData.largestArmy;
 		player.longestRoad = playerData.longestRoad;
 		player.resourceCards = playerData.numResourceCards;
 		player.developmentCards = playerData.numDevelopmentCards;
+		player.wantsToSpecialBuild = playerData.wantsToSpecialBuild || false;
 
 		players.push(player);
 	}

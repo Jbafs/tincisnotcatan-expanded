@@ -132,6 +132,17 @@ $("#integer-option").click(function() {
 	$("#dynamic-rates-container").addClass("hidden");
 });
 
+// Show Special Building Phase checkbox only for 5-6 player games
+$("#numPlayersDesired").change(function() {
+	var numPlayers = parseInt($(this).val());
+	if (numPlayers >= 5) {
+		$("#special-build-container").removeClass("hidden");
+	} else {
+		$("#special-build-container").addClass("hidden");
+		$("#special-build-phase-checkbox").prop("checked", false);
+	}
+});
+
 /*
  * Opens the create/join game screen.
  */
@@ -162,6 +173,7 @@ function existingGameSelected(caller) {
 	var isDecimal = $("#decimal-option").hasClass("active");
 	var isDynamic = isDecimal && $("#dynamic-rates-option").hasClass("active");
 	var isStandard = $("#default-board-option").hasClass("active");
+	var isSpecialBuildPhase = parseInt(groupSize) >= 5 && $("#special-build-phase-checkbox").is(":checked");
 
 	if (userName == undefined || userName == "") {
 		alert("Please select a username");
@@ -175,6 +187,7 @@ function existingGameSelected(caller) {
 	setCookie("isDecimal", isDecimal);
 	setCookie("isDynamic", isDynamic);
 	setCookie("isStandard", isStandard);
+	setCookie("isSpecialBuildPhase", isSpecialBuildPhase);
 	deleteCookie("USER_ID");
 	return true;
 }
@@ -227,6 +240,7 @@ function startGamePressed() {
 	var isDecimal = $("#decimal-option").hasClass("active");
 	var isDynamic = isDecimal && $("#dynamic-rates-option").hasClass("active");
 	var isStandard = $("#default-board-option").hasClass("active");
+	var isSpecialBuildPhase = parseInt(numPlayers) >= 5 && $("#special-build-phase-checkbox").is(":checked");
 
 	if (userName == undefined || userName == "") {
 		alert("Please select a username");
@@ -245,6 +259,7 @@ function startGamePressed() {
 	setCookie("groupName", groupName);
 	setCookie("isDynamic", isDynamic);
 	setCookie("isStandard", isStandard);
+	setCookie("isSpecialBuildPhase", isSpecialBuildPhase);
 
 	deleteCookie("USER_ID");
 	return true; // will allow the get request to process.

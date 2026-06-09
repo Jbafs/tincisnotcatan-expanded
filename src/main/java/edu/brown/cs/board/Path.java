@@ -19,6 +19,8 @@ public class Path {
   private Intersection _start;
   private Intersection _end;
   private Road _road;
+  private Ship _ship;
+  private boolean _isWaterPath;
 
   /**
    * Constructor for the class.
@@ -38,11 +40,109 @@ public class Path {
 
   /**
    * Gets the road on this path.
-   * 
+   *
    * @return the road, else null.
    */
   public Road getRoad() {
     return _road;
+  }
+
+  /**
+   * Gets the ship on this path.
+   *
+   * @return the ship, else null.
+   */
+  public Ship getShip() {
+    return _ship;
+  }
+
+  /** Marks this path as a water path (adjacent to at least one SEA tile). */
+  public void setWaterPath(boolean isWater) {
+    _isWaterPath = isWater;
+  }
+
+  /** Returns true if this path is adjacent to at least one SEA tile. */
+  public boolean isWaterPath() {
+    return _isWaterPath;
+  }
+
+  /**
+   * Returns true if the given player can place a ship on this path.
+   * Requires: water path, no existing road or ship, and connectivity to a
+   * player settlement/city or existing ship.
+   */
+  public boolean canPlaceShip(Player p) {
+    if (!_isWaterPath || _road != null || _ship != null) {
+      return false;
+    }
+    return hasShipConnectivity(_start, p) || hasShipConnectivity(_end, p);
+  }
+
+  private boolean hasShipConnectivity(Intersection i, Player p) {
+    if (i.getBuilding() != null && i.getBuilding().getPlayer().equals(p)) {
+      return true;
+    }
+    for (Path adj : i.getPaths()) {
+      if (adj != this && adj._ship != null && adj._ship.getPlayer().equals(p)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns true if a ship can be placed adjacent to the last-built settlement
+   * during setup (mirrors canPlaceSetupRoad).
+   */
+  public boolean canPlaceSetupShip(Setup setup) {
+    if (!_isWaterPath) {
+      return false;
+    }
+    if (setup.getLastBuiltSettlement() != null) {
+      if (getStart().equals(setup.getLastBuiltSettlement())
+          || getEnd().equals(setup.getLastBuiltSettlement())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Places a ship for the given player. Validates via canPlaceShip.
+   */
+  public void placeShip(Player p) {
+    if (canPlaceShip(p)) {
+      _ship = new Ship(p);
+    }
+  }
+
+  /**
+   * Returns true if this path's ship can be moved by the given player.
+   * A ship can be moved when it is at an open end of a ship chain
+   * (at least one endpoint has no other ship or building of the player).
+   */
+  public boolean canMoveShip(Player p) {
+    if (_ship == null || !_ship.getPlayer().equals(p)) {
+      return false;
+    }
+    return isOpenEnd(_start, p) || isOpenEnd(_end, p);
+  }
+
+  private boolean isOpenEnd(Intersection i, Player p) {
+    if (i.getBuilding() != null && i.getBuilding().getPlayer().equals(p)) {
+      return false;
+    }
+    for (Path adj : i.getPaths()) {
+      if (adj != this && adj._ship != null && adj._ship.getPlayer().equals(p)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /** Removes the ship from this path and returns it (for move validation). */
+  public void removeShip() {
+    _ship = null;
   }
 
   @Override

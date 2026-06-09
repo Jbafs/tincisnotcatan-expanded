@@ -10,7 +10,10 @@ import java.util.Random;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
 
+import edu.brown.cs.board.City;
+import edu.brown.cs.board.Intersection;
 import edu.brown.cs.board.Tile;
+import edu.brown.cs.board.TileType;
 import edu.brown.cs.catan.Player;
 import edu.brown.cs.catan.Referee;
 import edu.brown.cs.catan.Resource;
@@ -65,36 +68,56 @@ public class RollDice implements FollowUpAction {
 
     if (diceRoll != 7) {
       Collection<Tile> tiles = _ref.getBoard().getTiles();
+      Map<Integer, Integer> goldByPlayer = new HashMap<>();
       // Iterate through tiles on the board
       for (Tile t : tiles) {
         // If the tile matches the roll and does not have the robber
         if (t.getRollNumber() == diceRoll && !t.hasRobber()) {
-          // Find out who should collect what from the intersections
-          Map<Integer, Map<Resource, Integer>> fromTile = t
-              .notifyIntersections();
-          // Iterate through this and consolidate collections for each person
-          for (int playerID : fromTile.keySet()) {
-            if (!playerResourceCount.containsKey(playerID)) {
-              playerResourceCount.put(playerID,
-                  new HashMap<Resource, Integer>());
-            }
-            Map<Resource, Integer> resourceCount = fromTile.get(playerID);
-            Map<Resource, Integer> playerCount = playerResourceCount
-                .get(playerID);
-            for (Resource res : resourceCount.keySet()) {
-              if (playerCount.containsKey(res)) {
-                // Update the count
-                playerCount.replace(res,
-                    playerCount.get(res) + resourceCount.get(res));
-              } else {
-                playerCount.put(res, resourceCount.get(res));
+          if (t.getType() == TileType.GOLD_FIELD) {
+            // Gold fields: player picks which resources to collect via follow-up
+            for (Intersection i : t.getIntersections()) {
+              if (i.getBuilding() != null) {
+                int pID = i.getBuilding().getPlayer().getID();
+                int gold = (i.getBuilding() instanceof City) ? 2 : 1;
+                goldByPlayer.merge(pID, gold, Integer::sum);
               }
-              // Make sure the player collects the resource
-              _ref.getPlayerByID(playerID).addResource(res,
-                  resourceCount.get(res), _ref.getBank());
+            }
+          } else {
+            // Find out who should collect what from the intersections
+            Map<Integer, Map<Resource, Integer>> fromTile = t
+                .notifyIntersections();
+            // Iterate through this and consolidate collections for each person
+            for (int playerID : fromTile.keySet()) {
+              if (!playerResourceCount.containsKey(playerID)) {
+                playerResourceCount.put(playerID,
+                    new HashMap<Resource, Integer>());
+              }
+              Map<Resource, Integer> resourceCount = fromTile.get(playerID);
+              Map<Resource, Integer> playerCount = playerResourceCount
+                  .get(playerID);
+              for (Resource res : resourceCount.keySet()) {
+                if (playerCount.containsKey(res)) {
+                  // Update the count
+                  playerCount.replace(res,
+                      playerCount.get(res) + resourceCount.get(res));
+                } else {
+                  playerCount.put(res, resourceCount.get(res));
+                }
+                // Make sure the player collects the resource
+                _ref.getPlayerByID(playerID).addResource(res,
+                    resourceCount.get(res), _ref.getBank());
+              }
             }
           }
         }
+      }
+      if (!goldByPlayer.isEmpty()) {
+        Collection<FollowUpAction> goldFollowUps = new ArrayList<>();
+        for (Map.Entry<Integer, Integer> entry : goldByPlayer.entrySet()) {
+          goldFollowUps.add(
+              new CollectGoldResource(entry.getKey(), entry.getValue()));
+        }
+        _ref.addFollowUp(goldFollowUps);
       }
       for (Integer playerID : playerResourceCount.keySet()) {
         StringBuilder message = new StringBuilder();

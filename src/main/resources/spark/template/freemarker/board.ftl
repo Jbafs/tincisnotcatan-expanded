@@ -6,6 +6,8 @@
 	<div class="col-xs-3">
 		<div id="turn-display-container"></div>
 		<input type="button" class="btn btn-primary" id="end-turn-btn" value="End Turn"><br>
+		<input type="button" class="btn btn-warning hidden" id="toggle-build-intent-btn" value="Flag Build Intent"><br>
+		<input type="button" class="btn btn-success hidden" id="pass-special-build-btn" value="Pass Build Turn"><br>
 		<div id="chat-container">
 		    <div id="chat"></div>
 			<div id="chatControls">
@@ -81,6 +83,19 @@
 				    	<span>1</span>
 				    	<div class="circle build-circle brick-color">
 							<img src="images/icon-brick.svg" alt="Brick">
+						</div>
+						</br>
+						<span>1</span>
+				    	<div class="circle build-circle wood-color">
+							<img src="images/icon-wood.svg" alt="Wood">
+						</div>
+		    		</li>
+		    		<li class="list-group-item">
+				    	<input type="button" class="btn btn-default build-btn" id="ship-build-btn" value="Build Ship">
+				    	</br>
+				    	<span>1</span>
+				    	<div class="circle build-circle sheep-color">
+							<img src="images/icon-sheep.svg" alt="Sheep">
 						</div>
 						</br>
 						<span>1</span>
@@ -852,6 +867,54 @@
       		</div>
       		<div class="modal-footer">
       			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      		</div>
+    	</div>
+	</div>
+</div>
+
+<div class="modal fade" id="gold-collection-modal" tabindex="-1" role="dialog" aria-labelledby="goldCollectionLabel" data-backdrop="static">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+      		<div class="modal-header">
+        		<h4 class="modal-title" id="goldCollectionLabel">Gold Field — Choose Resources</h4>
+      		</div>
+      		<div class="modal-body">
+      			<p>You are on a gold field! Choose <strong id="gold-count"></strong> resource(s):</p>
+      			<div class="row text-center" id="gold-resource-pickers">
+      				<div class="col-xs-2">
+      					<div class="circle build-circle brick-color" style="cursor:pointer" id="gold-pick-BRICK" onclick="adjustGoldPick('BRICK',1)">
+							<img src="images/icon-brick.svg" alt="Brick">
+						</div>
+						<span id="gold-pick-BRICK-count">0</span>
+					</div>
+      				<div class="col-xs-2">
+      					<div class="circle build-circle wood-color" style="cursor:pointer" id="gold-pick-WOOD" onclick="adjustGoldPick('WOOD',1)">
+							<img src="images/icon-wood.svg" alt="Wood">
+						</div>
+						<span id="gold-pick-WOOD-count">0</span>
+					</div>
+      				<div class="col-xs-2">
+      					<div class="circle build-circle ore-color" style="cursor:pointer" id="gold-pick-ORE" onclick="adjustGoldPick('ORE',1)">
+							<img src="images/icon-ore.svg" alt="Ore">
+						</div>
+						<span id="gold-pick-ORE-count">0</span>
+					</div>
+      				<div class="col-xs-2">
+      					<div class="circle build-circle wheat-color" style="cursor:pointer" id="gold-pick-WHEAT" onclick="adjustGoldPick('WHEAT',1)">
+							<img src="images/icon-wheat.svg" alt="Wheat">
+						</div>
+						<span id="gold-pick-WHEAT-count">0</span>
+					</div>
+      				<div class="col-xs-2">
+      					<div class="circle build-circle sheep-color" style="cursor:pointer" id="gold-pick-SHEEP" onclick="adjustGoldPick('SHEEP',1)">
+							<img src="images/icon-sheep.svg" alt="Sheep">
+						</div>
+						<span id="gold-pick-SHEEP-count">0</span>
+					</div>
+				</div>
+      		</div>
+      		<div class="modal-footer">
+      			<button type="button" class="btn btn-primary" id="gold-collect-btn">Collect</button>
       		</div>
     	</div>
 	</div>

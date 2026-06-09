@@ -7,16 +7,23 @@ import static edu.brown.cs.catan.Settings.LARGEST_ARMY_POINT_VAL;
 import static edu.brown.cs.catan.Settings.LONGEST_ROAD_POINT_VAL;
 import static edu.brown.cs.catan.Settings.SETTLEMENT_POINT_VAL;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.brown.cs.actions.FollowUpAction;
 import edu.brown.cs.board.Board;
+import edu.brown.cs.board.HexCoordinate;
 import edu.brown.cs.board.Intersection;
+import edu.brown.cs.board.IntersectionCoordinate;
+import edu.brown.cs.board.Tile;
 import edu.brown.cs.gamestats.CatanStats;
 import edu.brown.cs.gamestats.GameStats;
 
@@ -39,6 +46,10 @@ public class MasterReferee implements Referee {
   private GameStatus _gameStatus;
   private final Setup _setup;
   private GameStats _gameStats;
+  // Player IDs queued for Special Building Phase (5-6 player option)
+  private final Deque<Integer> _specialBuildQueue = new ArrayDeque<>();
+  // Tracks which island indices each player has settled (Seafarers discovery)
+  private final Map<Integer, Set<Integer>> _settledIslands = new HashMap<>();
 
   /**
    * Creates a MasterReferee. Contains all Catan game data with default game
@@ -107,16 +118,54 @@ public class MasterReferee implements Referee {
 
     if (_gameStatus == GameStatus.PROGRESS) {
       _turn = new Turn(_turn.getTurnNum() + 1, nextPlayer.getDevCards());
+      // Fill special build queue if the setting is enabled
+      if (_gameSettings.isSpecialBuildPhase) {
+        _specialBuildQueue.clear();
+        for (Integer pid : _turnOrder) {
+          Player p = _players.get(pid);
+          if (!p.equals(nextPlayer) && p.wantsToSpecialBuild()) {
+            _specialBuildQueue.addLast(pid);
+          }
+        }
+        if (!_specialBuildQueue.isEmpty()) {
+          _gameStatus = GameStatus.SPECIAL_BUILD;
+        }
+      }
     } else {
       _turn = new Turn(_turn.getTurnNum() + 1, Collections.emptyMap());
     }
+  }
 
+  @Override
+  public List<Integer> getSpecialBuildQueue() {
+    return Collections.unmodifiableList(new ArrayList<>(_specialBuildQueue));
+  }
+
+  @Override
+  public boolean advanceSpecialBuild(int playerID) {
+    Integer head = _specialBuildQueue.peek();
+    if (head != null && head == playerID) {
+      _specialBuildQueue.poll();
+      Player p = _players.get(playerID);
+      if (p != null) {
+        p.setWantsToSpecialBuild(false);
+      }
+    }
+    if (_specialBuildQueue.isEmpty()) {
+      _gameStatus = GameStatus.PROGRESS;
+      return true;
+    }
+    return false;
   }
 
   @Override
   public Player currentPlayer() {
     if (_players.size() != _gameSettings.numPlayers) {
       return null;
+    }
+    if (_gameStatus == GameStatus.SPECIAL_BUILD) {
+      Integer head = _specialBuildQueue.peek();
+      return head != null ? _players.get(head) : null;
     }
     if (_gameStatus == GameStatus.PROGRESS) {
       return _players.get(_turnOrder.get((_turn.getTurnNum() - 1)
@@ -361,6 +410,46 @@ public class MasterReferee implements Referee {
     return _players.remove(id) != null;
   }
 
+  @Override
+  public boolean notifyIslandDiscovery(Player p, Intersection intersection) {
+    if (!_gameSettings.isSeafarers) {
+      return false;
+    }
+    // Build a coordinate→tile index for efficient lookup
+    Map<HexCoordinate, Tile> tileByCoord = new HashMap<>();
+    for (Tile t : _board.getTiles()) {
+      tileByCoord.put(t.getCoordinate(), t);
+    }
+    // The 3 hex coordinates adjacent to this intersection
+    IntersectionCoordinate pos = intersection.getPosition();
+    Set<HexCoordinate> adjCoords = new HashSet<>();
+    adjCoords.add(pos.getCoord1());
+    adjCoords.add(pos.getCoord2());
+    adjCoords.add(pos.getCoord3());
+
+    List<Set<Tile>> islands = _board.getIslands();
+    int islandIdx = -1;
+    outer:
+    for (int i = 0; i < islands.size(); i++) {
+      for (Tile t : islands.get(i)) {
+        if (adjCoords.contains(t.getCoordinate())) {
+          islandIdx = i;
+          break outer;
+        }
+      }
+    }
+    if (islandIdx < 0) {
+      return false;
+    }
+    Set<Integer> seen = _settledIslands.computeIfAbsent(p.getID(),
+        k -> new HashSet<>());
+    if (seen.contains(islandIdx)) {
+      return false;
+    }
+    seen.add(islandIdx);
+    return true;
+  }
+
   private class ReadOnlyReferee implements Referee {
 
     private final Referee _referee;
@@ -524,6 +613,22 @@ public class MasterReferee implements Referee {
     @Override
     public GameStats getGameStats() {
       return _referee.getGameStats();
+    }
+
+    @Override
+    public List<Integer> getSpecialBuildQueue() {
+      return _referee.getSpecialBuildQueue();
+    }
+
+    @Override
+    public boolean advanceSpecialBuild(int playerID) {
+      throw new UnsupportedOperationException(
+          "A ReadOnlyReferee cannot advance special build.");
+    }
+
+    @Override
+    public boolean notifyIslandDiscovery(Player p, Intersection intersection) {
+      return false;
     }
 
     @Override

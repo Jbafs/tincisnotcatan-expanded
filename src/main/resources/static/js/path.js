@@ -29,10 +29,13 @@ function Path(start1, start2, start3, end1, end2, end3) {
 				+ "-to-x-" + this.end.x + "y-" + this.end.y + "z-" + this.end.z).replace(/[.]/g, "_");
 
 	this.containsRoad = false;
+	this.containsShip = false;
 	this.player = null;
 
 	this.canBuildRoad = false;
+	this.canBuildShip = false;
 	this.highlighted = false;
+	this.shipHighlighted = false;
 	
 	$("#board-viewport").append("<div class='path-select' id='" + this.id + "-select'></div>");
 	$("#board-viewport").append("<div class='path' id='" + this.id + "'></div>");
@@ -89,7 +92,7 @@ Path.prototype.draw = function(transX, transY, scale) {
 	}
 		
 	var element = $("#" + this.id);
-	
+
 	// Draw road if this path contains a road
 	if (this.containsRoad) {
 		element.css("transform", "translate(" + x + "px, " + y + "px) "
@@ -97,6 +100,14 @@ Path.prototype.draw = function(transX, transY, scale) {
 		element.css("width", length);
 		element.css("height", height);
 		element.css("background-color", this.player.color);
+		element.removeClass("ship-piece");
+	} else if (this.containsShip) {
+		element.css("transform", "translate(" + x + "px, " + y + "px) "
+				+ "rotate(" + angle + "rad)");
+		element.css("width", length);
+		element.css("height", height * 1.8);
+		element.css("background-color", this.player.color);
+		element.addClass("ship-piece");
 	}
 
 	// Add selectable area to intersection
@@ -117,6 +128,15 @@ Path.prototype.addRoad = function(player) {
 }
 
 /*
+ * Adds a ship to this path.
+ * @param player - the player who owns this ship
+ */
+Path.prototype.addShip = function(player) {
+	this.containsShip = true;
+	this.player = player;
+}
+
+/*
  * Creates a path click handler.
  */
 Path.prototype.createPathClickHandler = function() {
@@ -133,15 +153,26 @@ Path.prototype.createPathClickHandler = function() {
 }
 
 /*
+ * Creates a ship placement click handler.
+ */
+Path.prototype.createShipClickHandler = function() {
+	var that = this;
+	return function(event) {
+		sendBuildShipAction(that.originalStart, that.originalEnd);
+		exitBuildShipMode();
+	};
+}
+
+/*
  * Highlights this path.
  */
 Path.prototype.highlight = function() {
 	if (!(this.highlighted)) {
 		this.highlighted = true;
-		
+
 		var select = $("#" + this.id + "-select");
 		select.addClass("highlighted-path");
-	
+
 		select.click(this.createPathClickHandler());
 	}
 }
@@ -152,11 +183,35 @@ Path.prototype.highlight = function() {
 Path.prototype.unHighlight = function() {
 	if (this.highlighted) {
 		this.highlighted = false;
-		
+
 		var select = $("#" + this.id + "-select");
 		select.removeClass("highlighted-path");
-	
+
 		var that = this;
+		select.off("click");
+	}
+}
+
+/*
+ * Highlights this path for ship placement.
+ */
+Path.prototype.highlightShip = function() {
+	if (!this.shipHighlighted) {
+		this.shipHighlighted = true;
+		var select = $("#" + this.id + "-select");
+		select.addClass("highlighted-ship-path");
+		select.click(this.createShipClickHandler());
+	}
+}
+
+/*
+ * Unhighlights this path for ship placement.
+ */
+Path.prototype.unHighlightShip = function() {
+	if (this.shipHighlighted) {
+		this.shipHighlighted = false;
+		var select = $("#" + this.id + "-select");
+		select.removeClass("highlighted-ship-path");
 		select.off("click");
 	}
 }
@@ -173,9 +228,13 @@ function parsePath(pathData) {
 			parseHexCoordinates(end.coord2), parseHexCoordinates(end.coord3));
 
 	path.canBuildRoad = pathData.canBuildRoad;
+	path.canBuildShip = pathData.canBuildShip || false;
 
-	if (pathData.hasOwnProperty("road")) {
+	if (pathData.hasOwnProperty("road") && pathData.road !== null) {
 		path.addRoad(playersById[pathData.road.player]);
+	}
+	if (pathData.hasOwnProperty("ship") && pathData.ship !== null) {
+		path.addShip(playersById[pathData.ship.player]);
 	}
 
 	return path;

@@ -280,6 +280,45 @@ function sendUpdateResourceAction() {
 	webSocket.send(JSON.stringify(updateReq));
 }
 
+function sendBuildShipAction(start, end) {
+	var buildReq = {
+		requestType : "action",
+		action : "buildShip",
+		player : playerId,
+		start : start,
+		end : end
+	};
+	webSocket.send(JSON.stringify(buildReq));
+}
+
+function sendCollectGoldResourceAction(resources) {
+	var req = {
+		requestType : "action",
+		action : "collectGoldResource",
+		player : playerId,
+		resources : resources
+	};
+	webSocket.send(JSON.stringify(req));
+}
+
+function sendToggleSpecialBuildAction() {
+	var req = {
+		requestType : "action",
+		action : "toggleSpecialBuild",
+		player : playerId
+	};
+	webSocket.send(JSON.stringify(req));
+}
+
+function sendPassSpecialBuildAction() {
+	var req = {
+		requestType : "action",
+		action : "passSpecialBuild",
+		player : playerId
+	};
+	webSocket.send(JSON.stringify(req));
+}
+
 // ---------- RESPONSES ---------- //
 
 webSocket.onmessage = function(msg) {
@@ -470,6 +509,9 @@ function handleFollowUp(action) {
 	case "rollDice":
 		showRollDiceModal();
 		break;
+	case "collectGoldResource":
+		showGoldCollectionModal(action.actionData.numGold);
+		break;
 	case "knightOrDice":
 		showKnightOrDiceModal();
 		break;
@@ -495,6 +537,8 @@ function handleGetGameState(gameStateData) {
 	gameSettings = gameStateData.settings;
 	tradeRates = gameStateData.players[playerId].rates;
 	gameStats = gameStateData.stats;
+	isSpecialBuildPhase = gameStateData.isSpecialBuildPhase || false;
+	specialBuildQueue = gameStateData.specialBuildQueue || [];
 
 	var activePlayerTab = $("#player-tabs .active").attr("player");
 	openedPlayerTab = (activePlayerTab == undefined) ? 0
@@ -570,6 +614,9 @@ function handleGetGameState(gameStateData) {
 	if (gameStateData.hasOwnProperty("followUp")) {
 		handleFollowUp(gameStateData.followUp);
 	}
+
+	// Update special build phase UI
+	updateSpecialBuildUI();
 }
 
 // Send message if enter is pressed in the input field

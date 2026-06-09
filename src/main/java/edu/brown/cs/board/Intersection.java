@@ -125,6 +125,10 @@ public class Intersection {
               && p.getRoad().getPlayer().getID() == playerID) {
             return true;
           }
+          if (p.getShip() != null
+              && p.getShip().getPlayer().getID() == playerID) {
+            return true;
+          }
         }
       }
     }

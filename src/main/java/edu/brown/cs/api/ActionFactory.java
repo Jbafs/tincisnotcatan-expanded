@@ -8,16 +8,20 @@ import edu.brown.cs.actions.Action;
 import edu.brown.cs.actions.BuildCity;
 import edu.brown.cs.actions.BuildRoad;
 import edu.brown.cs.actions.BuildSettlement;
+import edu.brown.cs.actions.BuildShip;
 import edu.brown.cs.actions.BuyDevelopmentCard;
 import edu.brown.cs.actions.EmptyAction;
 import edu.brown.cs.actions.EndTurn;
 import edu.brown.cs.actions.FollowUpAction;
+import edu.brown.cs.actions.MoveShip;
+import edu.brown.cs.actions.PassSpecialBuild;
 import edu.brown.cs.actions.PlayKnight;
 import edu.brown.cs.actions.PlayMonopoly;
 import edu.brown.cs.actions.PlayRoadBuilding;
 import edu.brown.cs.actions.PlayYearOfPlenty;
 import edu.brown.cs.actions.ProposeTrade;
 import edu.brown.cs.actions.StartGame;
+import edu.brown.cs.actions.ToggleSpecialBuild;
 import edu.brown.cs.actions.TradeWithBank;
 import edu.brown.cs.actions.UpdateResource;
 import edu.brown.cs.board.HexCoordinate;
@@ -100,6 +104,22 @@ public class ActionFactory {
           IntersectionCoordinate end = toIntersectionCoordinate(actionJSON.get(
               "end").getAsJsonObject());
           return new BuildRoad(_referee, playerID, start, end, true);
+        case BuildShip.ID:
+          IntersectionCoordinate shipStart = toIntersectionCoordinate(
+              actionJSON.get("start").getAsJsonObject());
+          IntersectionCoordinate shipEnd = toIntersectionCoordinate(
+              actionJSON.get("end").getAsJsonObject());
+          return new BuildShip(_referee, playerID, shipStart, shipEnd);
+        case MoveShip.ID:
+          IntersectionCoordinate srcStart = toIntersectionCoordinate(
+              actionJSON.get("srcStart").getAsJsonObject());
+          IntersectionCoordinate srcEnd = toIntersectionCoordinate(
+              actionJSON.get("srcEnd").getAsJsonObject());
+          IntersectionCoordinate dstStart = toIntersectionCoordinate(
+              actionJSON.get("dstStart").getAsJsonObject());
+          IntersectionCoordinate dstEnd = toIntersectionCoordinate(
+              actionJSON.get("dstEnd").getAsJsonObject());
+          return new MoveShip(_referee, playerID, srcStart, srcEnd, dstStart, dstEnd);
         case BuyDevelopmentCard.ID:
           return new BuyDevelopmentCard(_referee, playerID);
         case PlayMonopoly.ID:
@@ -115,6 +135,10 @@ public class ActionFactory {
           return new TradeWithBank(_referee, playerID, actionJSON);
         case EndTurn.ID:
           return new EndTurn(_referee, playerID);
+        case ToggleSpecialBuild.ID:
+          return new ToggleSpecialBuild(_referee, playerID);
+        case PassSpecialBuild.ID:
+          return new PassSpecialBuild(_referee, playerID);
         case ProposeTrade.ID:
           return new ProposeTrade(_referee, playerID, actionJSON);
         case UpdateResource.ID:

@@ -11,7 +11,7 @@ import edu.brown.cs.catan.Resource;
 public enum TileType {
 
   WHEAT(Resource.WHEAT), SHEEP(Resource.SHEEP), ORE(Resource.ORE), WOOD(
-      Resource.WOOD), BRICK(Resource.BRICK), DESERT(null), SEA(null);
+      Resource.WOOD), BRICK(Resource.BRICK), DESERT(null), SEA(null), GOLD_FIELD(null);
 
   private Resource _resType;
 

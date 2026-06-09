@@ -7,6 +7,8 @@ var openedPlayerTab = 0;
 var gameSettings = {};
 var tradeRates = {};
 var gameStats = {};
+var isSpecialBuildPhase = false;
+var specialBuildQueue = [];
 
 // Actions to take when window initially loads
 $(window).load(function() {
@@ -17,7 +19,9 @@ $(window).load(function() {
 	})
 
     $("#end-turn-btn").click(sendEndTurnAction);
-    
+    $("#toggle-build-intent-btn").click(sendToggleSpecialBuildAction);
+    $("#pass-special-build-btn").click(sendPassSpecialBuildAction);
+
     var href = window.location.pathname;
     if(href != "/home" && !document.cookie){
     	window.location = "/home"; // redirect to home
@@ -122,7 +126,8 @@ var BUILD_MODE = {
 	NONE: 0,
 	SETTLEMENT: 1,
 	CITY: 2,
-	ROAD: 3
+	ROAD: 3,
+	SHIP: 4
 }
 var currentMode = BUILD_MODE.NONE;
 
@@ -266,6 +271,60 @@ function exitRoadMode() {
 	unHighlightRoads();
 }
 
+// Highlight all paths that ships can be built on.
+function highlightShips() {
+	for (var i = 0; i < board.paths.length; i++) {
+		if (board.paths[i].canBuildShip) {
+			board.paths[i].highlightShip();
+		}
+	}
+}
+
+// Unhighlight all ship-highlighted paths.
+function unHighlightShips() {
+	for (var i = 0; i < board.paths.length; i++) {
+		if (board.paths[i].shipHighlighted) {
+			board.paths[i].unHighlightShip();
+		}
+	}
+}
+
+// Enter build ship mode.
+function enterShipMode() {
+	exitBuildMode();
+	currentMode = BUILD_MODE.SHIP;
+
+	var btnElement = $("#ship-build-btn");
+	btnElement.off("click", enterShipMode);
+	btnElement.click(exitShipMode);
+
+	btnElement.removeClass("btn-default");
+	btnElement.addClass("btn-danger");
+	btnElement.val("Cancel Build");
+
+	highlightShips();
+}
+
+// Exit build ship mode.
+function exitShipMode() {
+	currentMode = BUILD_MODE.NONE;
+
+	var btnElement = $("#ship-build-btn");
+	btnElement.off("click", exitShipMode);
+	btnElement.click(enterShipMode);
+
+	btnElement.removeClass("btn-danger");
+	btnElement.addClass("btn-default");
+	btnElement.val("Build Ship");
+
+	unHighlightShips();
+}
+
+// Called from path.js ship click handler.
+function exitBuildShipMode() {
+	exitShipMode();
+}
+
 // Exit the current build mode.
 function exitBuildMode() {
 	switch (currentMode) {
@@ -278,6 +337,9 @@ function exitBuildMode() {
 		case BUILD_MODE.ROAD:
 			exitRoadMode();
 			break;
+		case BUILD_MODE.SHIP:
+			exitShipMode();
+			break;
 		default:
 			break;
 	}
@@ -287,6 +349,49 @@ function exitBuildMode() {
 $("#settlement-build-btn").click(enterSettlementMode);
 $("#city-build-btn").click(enterCityMode);
 $("#road-build-btn").click(enterRoadMode);
+$("#ship-build-btn").click(enterShipMode);
+
+//////////////////////////////////////////
+// Special Building Phase UI
+//////////////////////////////////////////
+
+/*
+ * Show or hide the special build buttons based on current game state.
+ */
+function updateSpecialBuildUI() {
+	var settingEnabled = gameSettings && gameSettings.isSpecialBuildPhase;
+
+	// "Flag Build Intent" — visible during normal play for non-active players when setting is on
+	var canToggle = settingEnabled && !isSpecialBuildPhase && currentPlayerTurn !== playerId;
+	if (canToggle) {
+		$("#toggle-build-intent-btn").removeClass("hidden");
+		var myPlayer = playersById[playerId];
+		if (myPlayer && myPlayer.wantsToSpecialBuild) {
+			$("#toggle-build-intent-btn").val("Clear Build Intent");
+			$("#toggle-build-intent-btn").removeClass("btn-warning").addClass("btn-success");
+		} else {
+			$("#toggle-build-intent-btn").val("Flag Build Intent");
+			$("#toggle-build-intent-btn").removeClass("btn-success").addClass("btn-warning");
+		}
+	} else {
+		$("#toggle-build-intent-btn").addClass("hidden");
+	}
+
+	// "Pass Build Turn" — visible when it is this player's special build mini-turn
+	var isMySpecialBuildTurn = isSpecialBuildPhase
+		&& specialBuildQueue.length > 0
+		&& specialBuildQueue[0] === playerId;
+	if (isMySpecialBuildTurn) {
+		$("#pass-special-build-btn").removeClass("hidden");
+	} else {
+		$("#pass-special-build-btn").addClass("hidden");
+	}
+
+	// Disable regular end-turn button during special build phase
+	if (isSpecialBuildPhase) {
+		$("#end-turn-btn").prop("disabled", true);
+	}
+}
 
 // Exit build mode on the following actions
 $("#players-tab-toggle").click(exitBuildMode);
@@ -854,6 +959,40 @@ $("#knight-dice-roll-dice-btn").click(function(event) {
 function showKnightOrDiceModal() {
 	$("#knight-or-dice-modal").modal("show");
 }
+
+//////////////////////////////////////////
+// Gold Field Collection Modal
+//////////////////////////////////////////
+
+var goldNumToCollect = 0;
+var goldPicks = { BRICK: 0, WOOD: 0, ORE: 0, WHEAT: 0, SHEEP: 0 };
+
+function showGoldCollectionModal(numGold) {
+	goldNumToCollect = numGold;
+	goldPicks = { BRICK: 0, WOOD: 0, ORE: 0, WHEAT: 0, SHEEP: 0 };
+	$("#gold-count").text(numGold);
+	["BRICK","WOOD","ORE","WHEAT","SHEEP"].forEach(function(r) {
+		$("#gold-pick-" + r + "-count").text(0);
+	});
+	$("#gold-collection-modal").modal("show");
+}
+
+function adjustGoldPick(resource, delta) {
+	var current = goldPicks[resource];
+	var total = Object.values(goldPicks).reduce(function(a, b) { return a + b; }, 0);
+	var newVal = current + delta;
+	if (newVal < 0) return;
+	if (delta > 0 && total >= goldNumToCollect) return;
+	goldPicks[resource] = newVal;
+	$("#gold-pick-" + resource + "-count").text(newVal);
+}
+
+$("#gold-collect-btn").click(function() {
+	var total = Object.values(goldPicks).reduce(function(a, b) { return a + b; }, 0);
+	if (total < goldNumToCollect) return;
+	sendCollectGoldResourceAction(goldPicks);
+	$("#gold-collection-modal").modal("hide");
+});
 
 //////////////////////////////////////////
 // Disconnected Users

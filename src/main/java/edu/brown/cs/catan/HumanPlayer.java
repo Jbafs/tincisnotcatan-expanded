@@ -26,10 +26,12 @@ public class HumanPlayer implements Player {
   private int numRoads;
   private int numSettlements;
   private int numCities;
+  private int numShips;
 
   private int numPlayedKnights;
   private final String color;
   private int numVictoryPoints;
+  private boolean wantsToSpecialBuild;
 
   /**
    * Creates a HumanPlayer (CatanPlayer)
@@ -48,6 +50,7 @@ public class HumanPlayer implements Player {
     this.numRoads = Settings.INITIAL_ROADS;
     this.numSettlements = Settings.INITIAL_SETTLEMENTS;
     this.numCities = Settings.INITIAL_CITIES;
+    this.numShips = Settings.INITIAL_SHIPS;
     numVictoryPoints = 0;
     // Initialize Resource card hand:
     this.resources = new HashMap<>();
@@ -321,6 +324,49 @@ public class HumanPlayer implements Player {
   }
 
   @Override
+  public boolean wantsToSpecialBuild() {
+    return wantsToSpecialBuild;
+  }
+
+  @Override
+  public void setWantsToSpecialBuild(boolean val) {
+    wantsToSpecialBuild = val;
+  }
+
+  @Override
+  public int numShips() {
+    return numShips;
+  }
+
+  @Override
+  public boolean canBuildShip() {
+    for (Map.Entry<Resource, Double> price : Settings.SHIP_COST.entrySet()) {
+      if (resources.get(price.getKey()) - price.getValue() < 0) {
+        return false;
+      }
+    }
+    return numShips > 0;
+  }
+
+  @Override
+  public void buildShip() {
+    for (Map.Entry<Resource, Double> price : Settings.SHIP_COST.entrySet()) {
+      removeResource(price.getKey(), price.getValue());
+    }
+  }
+
+  @Override
+  public void useShip() {
+    assert numShips > 0;
+    numShips--;
+  }
+
+  @Override
+  public void returnShip() {
+    numShips++;
+  }
+
+  @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
@@ -557,6 +603,17 @@ public class HumanPlayer implements Player {
     }
 
     @Override
+    public boolean wantsToSpecialBuild() {
+      return _player.wantsToSpecialBuild();
+    }
+
+    @Override
+    public void setWantsToSpecialBuild(boolean val) {
+      throw new UnsupportedOperationException(
+          "A ReadOnlyPlayer cannot change state.");
+    }
+
+    @Override
     public void addResource(Resource resource, double count, Bank bank) {
       throw new UnsupportedOperationException(
           "A ReadOnlyPlayer cannot add resource cards.");
@@ -568,6 +625,34 @@ public class HumanPlayer implements Player {
       throw new UnsupportedOperationException(
           "A ReadOnlyPlayer cannot remove resource cards.");
 
+    }
+
+    @Override
+    public int numShips() {
+      return _player.numShips();
+    }
+
+    @Override
+    public boolean canBuildShip() {
+      return _player.canBuildShip();
+    }
+
+    @Override
+    public void buildShip() {
+      throw new UnsupportedOperationException(
+          "A ReadOnlyPlayer cannot build.");
+    }
+
+    @Override
+    public void useShip() {
+      throw new UnsupportedOperationException(
+          "A ReadOnlyPlayer cannot use ship pieces.");
+    }
+
+    @Override
+    public void returnShip() {
+      throw new UnsupportedOperationException(
+          "A ReadOnlyPlayer cannot return ship pieces.");
     }
 
   }

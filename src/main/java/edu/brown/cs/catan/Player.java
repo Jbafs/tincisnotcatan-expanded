@@ -108,4 +108,18 @@ public interface Player {
 
   boolean hasResource(Resource res, double count);
 
+  boolean wantsToSpecialBuild();
+
+  void setWantsToSpecialBuild(boolean val);
+
+  int numShips();
+
+  boolean canBuildShip();
+
+  void buildShip();
+
+  void useShip();
+
+  void returnShip();
+
 }
