@@ -15,6 +15,12 @@ import static edu.brown.cs.catan.Settings.NUM_WHEAT_TILE;
 import static edu.brown.cs.catan.Settings.NUM_WOOD_TILE;
 import static edu.brown.cs.catan.Settings.ROLL_NUMS;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,6 +94,20 @@ public class Board {
    * The two tiles adjacent to a path are the HexCoordinates common to both
    * endpoint IntersectionCoordinates.
    */
+  private static BoardSpec loadScenario(String scenarioId) {
+    String path = "scenarios/" + scenarioId + ".json";
+    try (InputStream is = Board.class.getClassLoader().getResourceAsStream(path)) {
+      if (is == null) {
+        throw new IllegalArgumentException("Scenario not found: " + scenarioId);
+      }
+      JsonObject json = JsonParser.parseReader(
+          new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
+      return BoardSpec.fromJson(json);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to load scenario: " + scenarioId, e);
+    }
+  }
+
   private void markWaterPaths() {
     Set<HexCoordinate> seaCoords = new HashSet<>();
     for (Tile t : _tiles) {
@@ -121,8 +141,17 @@ public class Board {
   public Board(GameSettings settings) {
     if (settings.boardLayout == BoardLayout.CUSTOM
         && settings.customBoardSpec != null) {
-      // Delegate fully to spec constructor, then copy state
       Board tmp = new Board(settings.customBoardSpec);
+      _tiles = tmp._tiles;
+      _intersections = tmp._intersections;
+      _paths = tmp._paths;
+      PORT_LOCATION = tmp.PORT_LOCATION;
+      return;
+    }
+
+    if (settings.boardLayout == BoardLayout.SEAFARERS
+        && settings.scenarioId != null) {
+      Board tmp = new Board(loadScenario(settings.scenarioId));
       _tiles = tmp._tiles;
       _intersections = tmp._intersections;
       _paths = tmp._paths;

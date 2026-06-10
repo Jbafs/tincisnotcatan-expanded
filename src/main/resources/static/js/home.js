@@ -4,6 +4,14 @@ $(window).load(function() {
 		deleteCookie("desiredGroupId");
 	}
 
+	// Load Seafarers scenarios from server
+	$.getJSON("/scenarios", function(data) {
+		var select = $("#scenario-select");
+		select.empty();
+		for (var i = 0; i < data.length; i++) {
+			select.append("<option value='" + data[i].id + "'>" + data[i].name + "</option>");
+		}
+	});
 
 	// If on mobile, render mobile currently not supported:
 	isMobile = function() {
@@ -31,9 +39,8 @@ if (document.location.hostname == "localhost") {
 	webSocket = new WebSocket("ws://" + location.hostname + ":" + location.port
 			+ "/groups/");
 } else {
-	// we're on heroku - use https:
-	webSocket = new WebSocket("wss://" + location.hostname + ":"
-			+ location.port + "/groups/");
+	// we're on heroku - use https (no port, Heroku routes 443 externally):
+	webSocket = new WebSocket("wss://" + location.hostname + "/groups/");
 }
 
 // Send a heartbeat on the websocket
@@ -143,6 +150,23 @@ $("#numPlayersDesired").change(function() {
 	}
 });
 
+// Show/hide Seafarers scenario picker based on map type selection
+$("#seafarers-map-btn").click(function() {
+	$("#seafarers-scenario-container").removeClass("hidden");
+});
+$("#standard-map-btn, #extended-map-btn").click(function() {
+	$("#seafarers-scenario-container").addClass("hidden");
+});
+
+/*
+ * Returns the selected map layout string (STANDARD, EXTENDED_56, or SEAFARERS).
+ */
+function getSelectedMapLayout() {
+	if ($("#seafarers-map-btn").hasClass("active")) return "SEAFARERS";
+	if ($("#extended-map-btn").hasClass("active")) return "EXTENDED_56";
+	return "STANDARD";
+}
+
 /*
  * Opens the create/join game screen.
  */
@@ -174,6 +198,9 @@ function existingGameSelected(caller) {
 	var isDynamic = isDecimal && $("#dynamic-rates-option").hasClass("active");
 	var isStandard = $("#default-board-option").hasClass("active");
 	var isSpecialBuildPhase = parseInt(groupSize) >= 5 && $("#special-build-phase-checkbox").is(":checked");
+	var boardLayout = getSelectedMapLayout();
+	var isSeafarers = boardLayout === "SEAFARERS";
+	var scenarioId = isSeafarers ? $("#scenario-select").val() : "";
 
 	if (userName == undefined || userName == "") {
 		alert("Please select a username");
@@ -188,6 +215,9 @@ function existingGameSelected(caller) {
 	setCookie("isDynamic", isDynamic);
 	setCookie("isStandard", isStandard);
 	setCookie("isSpecialBuildPhase", isSpecialBuildPhase);
+	setCookie("boardLayout", boardLayout);
+	setCookie("isSeafarers", isSeafarers);
+	if (scenarioId) setCookie("scenarioId", scenarioId);
 	deleteCookie("USER_ID");
 	return true;
 }
@@ -203,7 +233,6 @@ function displayCookies() {
  */
 function getCookie(name) {
 	var nameEQ = name + "=";
-	// alert(document.cookie);
 	var ca = document.cookie.split(';');
 	for (var i = 0; i < ca.length; i++) {
 		var c = ca[i];
@@ -219,7 +248,7 @@ function setCookie(cookie, value) {
 	var eqVal = cookie + "=" + value;
 	document.cookie = eqVal;
 }
- 
+
 function stopReturnKey(evt) {
 	var evt = (evt) ? evt : ((event) ? event : null);
 	var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement
@@ -241,10 +270,13 @@ function startGamePressed() {
 	var isDynamic = isDecimal && $("#dynamic-rates-option").hasClass("active");
 	var isStandard = $("#default-board-option").hasClass("active");
 	var isSpecialBuildPhase = parseInt(numPlayers) >= 5 && $("#special-build-phase-checkbox").is(":checked");
+	var boardLayout = getSelectedMapLayout();
+	var isSeafarers = boardLayout === "SEAFARERS";
+	var scenarioId = isSeafarers ? $("#scenario-select").val() : "";
 
 	if (userName == undefined || userName == "") {
 		alert("Please select a username");
-		return false; // will not allow the get reqeust to process.
+		return false;
 	}
 
 	if (groupName === undefined || groupName === "") {
@@ -260,9 +292,12 @@ function startGamePressed() {
 	setCookie("isDynamic", isDynamic);
 	setCookie("isStandard", isStandard);
 	setCookie("isSpecialBuildPhase", isSpecialBuildPhase);
+	setCookie("boardLayout", boardLayout);
+	setCookie("isSeafarers", isSeafarers);
+	if (scenarioId) setCookie("scenarioId", scenarioId);
 
 	deleteCookie("USER_ID");
-	return true; // will allow the get request to process.
+	return true;
 }
 
 function deleteCookie(name) {

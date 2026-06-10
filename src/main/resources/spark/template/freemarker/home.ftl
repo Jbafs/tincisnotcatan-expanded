@@ -45,7 +45,7 @@
 									<input id="victory-points-input" class="form-control" type="number" min="5" max="15" value="10" step="1">
 								</div>
 							</div>
-						<label>Board</label>
+						<label>Board Tiles</label>
 						<br>
 						<div class="btn-group" data-toggle="buttons">
 							<label class="btn btn-default active">
@@ -54,6 +54,26 @@
   							<label class="btn btn-default" id="default-board-option">
     							<input type="radio" autocomplete="off">Standard
   							</label>
+						</div>
+						<br><br>
+						<label>Map Type</label>
+						<br>
+						<div class="btn-group" data-toggle="buttons" id="map-type-group">
+							<label class="btn btn-default active" id="standard-map-btn">
+								<input type="radio" autocomplete="off" checked>Standard
+							</label>
+							<label class="btn btn-default" id="extended-map-btn">
+								<input type="radio" autocomplete="off">Extended (5-6)
+							</label>
+							<label class="btn btn-default" id="seafarers-map-btn">
+								<input type="radio" autocomplete="off">Seafarers
+							</label>
+						</div>
+						<div id="seafarers-scenario-container" class="hidden">
+							<br>
+							<select id="scenario-select" class="form-control">
+								<option value="">Loading scenarios...</option>
+							</select>
 						</div>
 						<br>
 						<label id="decimal-resources-label">Decimal Resource Amounts</label>
@@ -89,6 +109,7 @@
 						</div>
 						<br>
 						<button id="startGameButton" class="btn btn-success" onclick="return startGamePressed()">Create Game!</button>
+						<a href="/editor" class="btn btn-link btn-sm" style="font-size:11px">Map Editor</a>
 					</form>
 				</div>
 			</div>

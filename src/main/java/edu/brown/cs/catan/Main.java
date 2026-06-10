@@ -7,6 +7,8 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 
 import edu.brown.cs.api.CatanGroupSelector;
+import edu.brown.cs.api.EditorHandler;
+import edu.brown.cs.api.ScenarioHandler;
 import edu.brown.cs.networking.GCT;
 import edu.brown.cs.networking.GCT.GCTBuilder;
 import edu.brown.cs.networking.Networking;
@@ -60,6 +62,8 @@ public class Main {
     // Set up board
     Spark.get("/board", new BoardHandler(), freeMarker);
     Spark.get("/home", new HomeHandler(), freeMarker);
+    Spark.get("/scenarios", new ScenarioHandler());
+    Spark.get("/editor", new EditorHandler(), freeMarker);
     Spark.get("/stats", new StatsHandler(), freeMarker);
     Spark.before("/", (request, response) -> {
       System.out.println(
