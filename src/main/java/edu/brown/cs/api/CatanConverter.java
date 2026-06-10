@@ -121,6 +121,7 @@ public class CatanConverter {
     private final Map<Resource, Double> resources;
     private final Map<DevelopmentCard, Integer> devCards;
     private boolean canBuildRoad;
+    private boolean canBuildShip;
     private boolean canBuildSettlement;
     private boolean canBuildCity;
     private boolean canBuyDevCard;
@@ -129,6 +130,7 @@ public class CatanConverter {
       resources = player.getResources();
       devCards = player.getDevCards();
       canBuildRoad = player.canBuildRoad();
+      canBuildShip = player.canBuildShip();
       canBuildSettlement = player.canBuildSettlement();
       canBuildCity = player.canBuildCity();
       canBuyDevCard = player.canBuyDevelopmentCard();

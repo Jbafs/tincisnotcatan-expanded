@@ -226,6 +226,12 @@ function fillPlayerBuyOptions(handData) {
 		$("#road-build-btn").prop("disabled", true);
 	}
 
+	if (handData.canBuildShip) {
+		$("#ship-build-btn").prop("disabled", false);
+	} else {
+		$("#ship-build-btn").prop("disabled", true);
+	}
+
 	if (handData.canBuyDevCard) {
 		$("#buy-dev-card-modal-open").prop("disabled", false);
 	} else {

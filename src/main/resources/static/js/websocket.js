@@ -6,9 +6,8 @@ if (document.location.hostname == "localhost") {
         webSocket = new WebSocket("ws://" + location.hostname + ":" + location.port
                         + "/action/");
 } else {
-        // we're on heroku - use https:
-        webSocket = new WebSocket("wss://" + location.hostname + ":" + location.port
-                + "/action/");
+        // we're on heroku - use https (no port, Heroku routes 443 externally):
+        webSocket = new WebSocket("wss://" + location.hostname + "/action/");
 }
 
 // Send a heartbeat on the websocket
@@ -535,6 +534,9 @@ function handleGetGameState(gameStateData) {
 	playerId = gameStateData.playerID;
 	currentPlayerTurn = gameStateData.currentTurn;
 	gameSettings = gameStateData.settings;
+	if (!gameSettings.isSeafarers) {
+		$("#ship-build-btn").hide();
+	}
 	tradeRates = gameStateData.players[playerId].rates;
 	gameStats = gameStateData.stats;
 	isSpecialBuildPhase = gameStateData.isSpecialBuildPhase || false;
