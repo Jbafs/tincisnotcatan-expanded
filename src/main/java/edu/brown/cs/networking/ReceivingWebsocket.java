@@ -21,6 +21,7 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 @WebSocket
@@ -125,7 +126,14 @@ public class ReceivingWebsocket {
   private void setCookie(User u, List<HttpCookie> cookies) {
     JsonObject j = new JsonObject();
     j.addProperty(Networking.REQUEST_IDENTIFIER, "setCookie");
-    j.add("cookies", Networking.GSON.toJsonTree(cookies));
+    JsonArray arr = new JsonArray();
+    for (HttpCookie c : cookies) {
+      JsonObject entry = new JsonObject();
+      entry.addProperty("name", c.getName());
+      entry.addProperty("value", c.getValue());
+      arr.add(entry);
+    }
+    j.add("cookies", arr);
     u.message(j);
   }
 

@@ -290,6 +290,17 @@ function sendBuildShipAction(start, end) {
 	webSocket.send(JSON.stringify(buildReq));
 }
 
+function sendPlaceShipAction(start, end) {
+	var placeReq = {
+		requestType : "action",
+		action : "placeShip",
+		player : playerId,
+		start : start,
+		end : end
+	};
+	webSocket.send(JSON.stringify(placeReq));
+}
+
 function sendCollectGoldResourceAction(resources) {
 	var req = {
 		requestType : "action",
@@ -535,7 +546,7 @@ function handleGetGameState(gameStateData) {
 	currentPlayerTurn = gameStateData.currentTurn;
 	gameSettings = gameStateData.settings;
 	if (!gameSettings.isSeafarers) {
-		$("#ship-build-btn").hide();
+		$("#ship-build-btn").closest("li").hide();
 	}
 	tradeRates = gameStateData.players[playerId].rates;
 	gameStats = gameStateData.stats;

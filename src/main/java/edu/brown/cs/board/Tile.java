@@ -112,43 +112,31 @@ public class Tile implements BoardTile {
    *          Map of the intersections on the board.
    */
   private void fillSeaTile(Map<IntersectionCoordinate, Intersection> intersections) {
+    // Scan all existing intersections for the two closest to the origin that
+    // border this sea tile. The old approach generated candidate keys using
+    // only "higher-coordinate" neighbor tiles, which never matched the keys
+    // that land tiles actually created (land tiles use their own coord as the
+    // first element). Scanning the map directly is order-independent.
     PriorityQueue<IntersectionCoordinate> closestIntersections =
-        new PriorityQueue<>(6, new IntersectionComparator());
+        new PriorityQueue<>(new IntersectionComparator());
 
-    HexCoordinate upLeftTile = new HexCoordinate(_coordinate.getX(),
-        _coordinate.getY(), _coordinate.getZ() + 1);
-    HexCoordinate upRightTile = new HexCoordinate(_coordinate.getX(),
-        _coordinate.getY() + 1, _coordinate.getZ() + 1);
-    HexCoordinate rightTile = new HexCoordinate(_coordinate.getX(),
-        _coordinate.getY() + 1, _coordinate.getZ());
-    HexCoordinate lowerRightTile = new HexCoordinate(_coordinate.getX() + 1,
-        _coordinate.getY() + 1, _coordinate.getZ());
-    HexCoordinate lowerLeftTile = new HexCoordinate(_coordinate.getX() + 1,
-        _coordinate.getY(), _coordinate.getZ());
-    HexCoordinate leftTile = new HexCoordinate(_coordinate.getX() + 1,
-        _coordinate.getY(), _coordinate.getZ() + 1);
+    for (IntersectionCoordinate ic : intersections.keySet()) {
+      if (ic.getCoord1().equals(_coordinate)
+          || ic.getCoord2().equals(_coordinate)
+          || ic.getCoord3().equals(_coordinate)) {
+        closestIntersections.add(ic);
+      }
+    }
 
-    closestIntersections.add(new IntersectionCoordinate(_coordinate,
-        upLeftTile, upRightTile));
-    closestIntersections.add(new IntersectionCoordinate(_coordinate,
-        upRightTile, rightTile));
-    closestIntersections.add(new IntersectionCoordinate(_coordinate,
-        rightTile, lowerRightTile));
-    closestIntersections.add(new IntersectionCoordinate(_coordinate,
-        lowerRightTile, lowerLeftTile));
-    closestIntersections.add(new IntersectionCoordinate(_coordinate,
-        lowerLeftTile, leftTile));
-    closestIntersections.add(new IntersectionCoordinate(_coordinate,
-        leftTile, upLeftTile));
-
-    // Add the two intersections closest to the origin
-    IntersectionCoordinate toAdd = closestIntersections.poll();
-    assert (intersections.containsKey(toAdd));
-    _intersections.add(intersections.get(toAdd));
-
-    toAdd = closestIntersections.poll();
-    assert (intersections.containsKey(toAdd));
-    _intersections.add(intersections.get(toAdd));
+    int added = 0;
+    while (!closestIntersections.isEmpty() && added < 2) {
+      IntersectionCoordinate toAdd = closestIntersections.poll();
+      Intersection intersection = intersections.get(toAdd);
+      if (intersection != null) {
+        _intersections.add(intersection);
+        added++;
+      }
+    }
   }
 
   /**

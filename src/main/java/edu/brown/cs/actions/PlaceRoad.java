@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import edu.brown.cs.board.HexCoordinate;
 import edu.brown.cs.board.IntersectionCoordinate;
 import edu.brown.cs.board.Path;
+import edu.brown.cs.board.PathCoordinate;
 import edu.brown.cs.catan.Player;
 import edu.brown.cs.catan.Referee;
 import edu.brown.cs.catan.Referee.GameStatus;
@@ -30,11 +31,13 @@ public class PlaceRoad implements FollowUpAction {
   private IntersectionCoordinate _end;
   private static final String VERB = "place a road";
   private boolean _isFinal;
+  private boolean _placingShip;
 
   public PlaceRoad(int playerID, boolean isFinal) {
     _playerID = playerID;
     _isSetup = false;
     _isFinal = isFinal;
+    _placingShip = false;
   }
 
   @Override
@@ -46,29 +49,41 @@ public class PlaceRoad implements FollowUpAction {
 
     // TODO: validate based on isGameSetup or based on canPlaceRoad!!!
 
-    // Build the road
-    new BuildRoad(_ref, _playerID, _start, _end, false).execute();
-    _ref.removeFollowUp(this);
+    Player player = _ref.getPlayerByID(_playerID);
 
-    boolean canPlace = false;
-    for (Path p : _ref.getBoard().getPaths().values()) {
-      if (p.canPlaceRoad(_ref.getPlayerByID(_playerID))) {
-        canPlace = true;
-        break;
+    if (_placingShip) {
+      // Seafarers initial placement: player chose to place a ship instead of a road.
+      Path path = _ref.getBoard().getPaths().get(new PathCoordinate(_start, _end));
+      if (path == null || !path.canPlaceSetupShip(_ref.getSetup())) {
+        return ImmutableMap.of(_playerID, new ActionResponse(false,
+            "You cannot place a ship there.", null));
+      }
+      player.useShip();
+      path.placeShip(player);
+    } else {
+      new BuildRoad(_ref, _playerID, _start, _end, false).execute();
+
+      boolean canPlace = false;
+      for (Path p : _ref.getBoard().getPaths().values()) {
+        if (p.canPlaceRoad(player)) {
+          canPlace = true;
+          break;
+        }
+      }
+      if (!canPlace && _ref.getNextFollowUp(_playerID) != null) {
+        _ref.removeFollowUp(new PlaceRoad(_playerID, false));
+        return ImmutableMap.of(_playerID, new ActionResponse(false,
+            "There is nowhere for you to build a second road", null));
       }
     }
 
-    if (!canPlace && _ref.getNextFollowUp(_playerID) != null) {
-      _ref.removeFollowUp(new PlaceRoad(_playerID, false));
-      return ImmutableMap.of(_playerID, new ActionResponse(false,
-          "There is nowhere for you to build a second road", null));
-    }
+    _ref.removeFollowUp(this);
 
     // Format responses:
-    String messageToAll = String.format("%s placed a road.", _ref
-        .getPlayerByID(_playerID).getName());
+    String piece = _placingShip ? "ship" : "road";
+    String messageToAll = String.format("%s placed a %s.", player.getName(), piece);
     ActionResponse respToPlayer = new ActionResponse(true,
-        "You placed a road.", null);
+        "You placed a " + piece + ".", null);
     ActionResponse respToAll = new ActionResponse(true, messageToAll, null);
     Map<Integer, ActionResponse> toReturn = new HashMap<>();
     for (Player p : _ref.getPlayers()) {
@@ -112,6 +127,7 @@ public class PlaceRoad implements FollowUpAction {
     }
     _start = toIntersectionCoordinate(params.get("start").getAsJsonObject());
     _end = toIntersectionCoordinate(params.get("end").getAsJsonObject());
+    _placingShip = params.has("_placingShip") && params.get("_placingShip").getAsBoolean();
     _isSetup = true;
   }
 

@@ -158,8 +158,14 @@ Path.prototype.createPathClickHandler = function() {
 Path.prototype.createShipClickHandler = function() {
 	var that = this;
 	return function(event) {
-		sendBuildShipAction(that.originalStart, that.originalEnd);
-		exitBuildShipMode();
+		if (inPlaceRoadMode) {
+			sendPlaceShipAction(that.originalStart, that.originalEnd);
+			exitShipMode();
+			exitPlaceRoadMode();
+		} else {
+			sendBuildShipAction(that.originalStart, that.originalEnd);
+			exitBuildShipMode();
+		}
 	};
 }
 

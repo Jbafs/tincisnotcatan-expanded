@@ -73,6 +73,15 @@ public class ActionFactory {
         nextAction.setupAction(_referee, playerID, actionJSON);
         return nextAction;
       }
+      // On Seafarers boards, "placeShip" can satisfy the "placeRoad" initial
+      // placement follow-up (player chooses road or ship for their first piece).
+      if ("placeShip".equals(action) && nextAction != null
+          && "placeRoad".equals(nextAction.getID())
+          && _referee.getGameSettings().isSeafarers) {
+        actionJSON.addProperty("_placingShip", true);
+        nextAction.setupAction(_referee, playerID, actionJSON);
+        return nextAction;
+      }
       if (nextAction == null) {
         for (Player p : _referee.getPlayers()) {
           nextAction = _referee.getNextFollowUp(p.getID());

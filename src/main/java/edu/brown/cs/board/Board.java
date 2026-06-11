@@ -223,12 +223,47 @@ public class Board {
     Map<IntersectionCoordinate, Intersection> intersections = new HashMap<>();
     Map<PathCoordinate, Path> paths = new HashMap<>();
     _tiles = new ArrayList<>();
-    runSpiralBuild(availTiles, rollNums, DEPTH_EXTENDED, intersections, paths);
+
+    // Fill positions center-first so the 30 tiles form a contiguous inner region.
+    // The depth=3 spiral has 37 positions; reversing it gives center→ring1→ring2→ring3.
+    // Only the first availTiles.size() (30) positions receive land tiles.
+    List<HexCoordinate> positions = collectSpiralPositions(DEPTH_EXTENDED);
+    Collections.reverse(positions);
+    int currRoll = 0;
+    for (int i = 0; i < availTiles.size(); i++) {
+      currRoll = addTile(availTiles.get(i), positions.get(i),
+          intersections, paths, currRoll, i, rollNums);
+    }
+
     addSeaTiles(intersections, getSeaPermutations(DEPTH_EXTENDED),
         PORT_LOCATION, Settings.EXTENDED_PORT_ORDER);
     _intersections = intersections;
     _paths = paths;
     markWaterPaths();
+  }
+
+  // Collect all hex positions produced by the spiral at the given depth, in
+  // outer-ring-first order.  Reversing the result gives center-first order.
+  private List<HexCoordinate> collectSpiralPositions(int depth) {
+    List<HexCoordinate> positions = new ArrayList<>();
+    int currDepth = depth;
+    int x = depth;
+    int y = 0;
+    int z = 0;
+    int i;
+    while (currDepth >= 0) {
+      positions.add(new HexCoordinate(x, y, z));
+      for (i = 0; i < currDepth; i++) { y++; positions.add(new HexCoordinate(x, y, z)); }
+      for (i = 0; i < currDepth; i++) { x--; positions.add(new HexCoordinate(x, y, z)); }
+      for (i = 0; i < currDepth; i++) { z++; positions.add(new HexCoordinate(x, y, z)); }
+      for (i = 0; i < currDepth; i++) { y--; positions.add(new HexCoordinate(x, y, z)); }
+      for (i = 0; i < currDepth; i++) { x++; positions.add(new HexCoordinate(x, y, z)); }
+      for (i = 1; i < currDepth; i++) { z--; positions.add(new HexCoordinate(x, y, z)); }
+      z--;
+      x--;
+      currDepth--;
+    }
+    return positions;
   }
 
   // -------------------------------------------------------------------------
@@ -341,10 +376,11 @@ public class Board {
    * {0,3,3}.
    */
   private int[][] buildSeeds(int depth) {
-    int d = depth + 1;
+    // depth is already the sea-ring number (board depth + 1), passed from getSeaPermutations.
+    // Seeds are {0, b, depth} for b in [0, depth], giving all ring-depth sea tiles.
     List<int[]> seeds = new ArrayList<>();
-    for (int b = 0; b <= d; b++) {
-      seeds.add(new int[] {0, b, d}); // already ascending: 0 <= b <= d
+    for (int b = 0; b <= depth; b++) {
+      seeds.add(new int[] {0, b, depth});
     }
     return seeds.toArray(new int[0][]);
   }

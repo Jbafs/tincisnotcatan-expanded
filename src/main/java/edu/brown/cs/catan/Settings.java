@@ -29,18 +29,18 @@ public abstract class Settings {
   public final static int NUM_ORE_TILE = 3;
   public final static int NUM_DESERT_TILE = 1;
 
-  // Extended 5-6 player board tile counts (37 total land tiles):
-  public final static int EXT_NUM_WOOD_TILE = 8;
+  // Extended 5-6 player board tile counts (30 total land tiles):
+  public final static int EXT_NUM_WOOD_TILE = 6;
   public final static int EXT_NUM_BRICK_TILE = 5;
-  public final static int EXT_NUM_WHEAT_TILE = 8;
-  public final static int EXT_NUM_SHEEP_TILE = 8;
-  public final static int EXT_NUM_ORE_TILE = 6;
+  public final static int EXT_NUM_WHEAT_TILE = 6;
+  public final static int EXT_NUM_SHEEP_TILE = 6;
+  public final static int EXT_NUM_ORE_TILE = 5;
   public final static int EXT_NUM_DESERT_TILE = 2;
 
-  // Roll numbers for 37-tile extended board (35 non-desert tiles):
+  // Roll numbers for 30-tile extended board (28 non-desert tiles):
   public final static int[] EXTENDED_ROLL_NUMS = {
       5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11,
-      2, 5, 6, 9, 4, 8, 3, 10, 11, 6, 5, 2, 9, 8, 4, 10, 12
+      2, 5, 6, 9, 4, 8, 3, 10, 11, 6
   };
 
   // Port resource order for the 11-port extended board:
